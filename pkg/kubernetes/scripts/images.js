@@ -668,9 +668,12 @@
                     kind: "ImageStream",
                     metadata: {
                         name: fields.name.trim(),
-                        namespace: fields.project.trim(),
+                        namespace: fields.project.trim()
                     }
                 };
+
+                if (fields.insecure == true)
+                    data["metadata"]["openshift.io/image.insecureRepository"] = "true";
 
                 if (fields.populate != "none")
                     data.spec = { dockerImageRepository: fields.pull.trim(), };
