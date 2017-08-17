@@ -103,6 +103,11 @@
                         return select().kind("Image").name(tag.items[0].image).one();
                 }
 
+                function imagetagByTag (name, tag) {
+                    if (tag && tag.items && tag.items.length)
+                        return select().kind("Image").name(tag.items[0].image).one();
+                }
+
                 function deleteImageStream(stream) {
                     var promise = actions.deleteImageStream(stream);
 
@@ -133,6 +138,7 @@
                 $scope.sharedImages = projectData.sharedImages;
                 $scope.imageTagNames = data.imageTagNames;
                 $scope.imageByTag = imageByTag;
+                $scope.imagetagByTag = imagetagByTag;
 
                 if (inPage) {
                     $scope.deleteTag = deleteTag;
@@ -231,8 +237,10 @@
                         $scope.tag = tag;
                 });
 
-                if ($scope.tag)
+                if ($scope.tag) {
                     $scope.image = $scope.imageByTag($scope.tag);
+                    $scope.imagetag = $scope.imagetagByTag(name, $scope.tag);
+                }
                 if ($scope.image) {
                     $scope.names = data.imageTagNames($scope.image);
                     $scope.config = data.imageConfig($scope.image);
@@ -284,6 +292,7 @@
                 var meta = imagestream.metadata || { };
                 var status = imagestream.status || { };
                 angular.forEach(status.tags || [ ], function(tag) {
+                    var tagname = tag.tag;
                     angular.forEach(tag.items || [ ], function(item) {
                         var link = loader.resolve("Image", item.image);
                         if (link in loader.objects)
@@ -303,6 +312,20 @@
                                 image.kind = "Image";
                                 loader.handle(image);
                                 handle_image(image);
+                            }
+                        }, function(response) {
+                            var message = response.statusText || response.message || String(response);
+                            console.warn("couldn't load image: " + message);
+                            interim.metadata.resourceVersion = "invalid";
+                        });
+                        var imagetag = meta.name + ":" + tagname;
+                        loader.load("ImageStreamTag", imagetag, meta.namespace).then(function(resource) {
+                            if (resource !== null) {
+                                var image = resource.image;
+                                if (image) {
+                                    image.kind = "ImageStreamTag";
+                                    loader.handle(image);
+                                }
                             }
                         }, function(response) {
                             var message = response.statusText || response.message || String(response);
